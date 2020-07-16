@@ -2,7 +2,7 @@ import knex from 'knex';
 import { BaseDatabase } from './BaseDatabase';
 
 export class UserDatabase extends BaseDatabase {
-    private static tableName = String(process.env.MAIN_TABLE);
+    private static tableName = "User";
     
     public async create(id: string, name: string, email: string, password: string) {
         try {
@@ -21,5 +21,14 @@ export class UserDatabase extends BaseDatabase {
         } catch (error) {
             throw new Error(error.sqlMessage || error.message);
         }
+    };
+
+    public async getByEmail(email: string): Promise<any> {
+        const result = await this.getConnection()
+            .select('*')
+            .from(UserDatabase.tableName)
+            .where({email});
+
+        return result[0];
     };
 };
