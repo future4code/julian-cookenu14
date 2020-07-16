@@ -4,6 +4,8 @@ import { AddressInfo } from 'net';
 import { IdGenerator } from './services/IdGenerator';
 import { Authenticator } from './services/Authenticator';
 import { UserDatabase } from './data/UserDatabase';
+import { RecipeDatabase } from './data/RecipeDatabase';
+
 
 dotenv.config();
 
@@ -118,6 +120,38 @@ app.get("/user/:id", async (req: Request, res: Response) => {
     }
 });
 
+
+//TODO: não está gravando no DB
+app.post("/recipe", async (req: Request, res: Response) => {
+    try {
+        const token = req.headers.authorization as string;
+        
+        const authenticator = new Authenticator();
+        const authenticationData = authenticator.getData(token);
+
+        const recipeData = {
+            title: req.body.title,
+            description: req.body.description,
+            date: req.body.date
+        };
+
+        const userDb = new UserDatabase();
+        const userId = await userDb.getById(authenticationData.id);
+
+        const idGenerator =  new IdGenerator();
+        const id = idGenerator.generate();
+
+        const recipeDb = new RecipeDatabase();
+        await recipeDb.create(id, recipeData.title, recipeData.description, recipeData.date, userId);
+
+        res.status(200).send();
+
+    } catch (error) {
+        res.status(400).send({
+            message: error.message,
+        });
+    }
+});
 
 
 const server = app.listen(process.env.PORT || 3003, () => {
