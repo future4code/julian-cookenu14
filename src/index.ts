@@ -102,6 +102,23 @@ app.get("/user/profile", async (req: Request, res: Response) => {
     }
 });
 
+//TODO: remover id deste endpoint
+app.get("/user/:id", async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const userDb = new UserDatabase();
+        const user = await userDb.getById(id);
+
+        res.status(200).send(user)
+    } catch (error) {
+        res.status(400).send({
+            message: error.message,
+        });
+    }
+});
+
+
 
 const server = app.listen(process.env.PORT || 3003, () => {
     if (server) {
