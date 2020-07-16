@@ -1,10 +1,10 @@
 import knex from 'knex';
 import { BaseDatabase } from './BaseDatabase';
 
-export class UserDataBase extends BaseDatabase {
+export class UserDatabase extends BaseDatabase {
     private static tableName = String(process.env.MAIN_TABLE);
     
-    public async createUser(id: string, name: string, email: string, password: string) {
+    public async create(id: string, name: string, email: string, password: string) {
         try {
             await this.getConnection()
                 .insert(
@@ -14,7 +14,7 @@ export class UserDataBase extends BaseDatabase {
                         email,
                         password
                     }
-                ).into(UserDataBase.tableName);
+                ).into(UserDatabase.tableName);
 
             BaseDatabase.destroyConnection();
 
