@@ -3,7 +3,7 @@ import { BaseDatabase } from './BaseDatabase';
 export class RecipeDatabase extends BaseDatabase {
     private static tableName = "Recipe";
         
-    public async create(id: string, title: string, description: string, date: string, userId: string) {
+    public async create(id: string, title: string, description: string, userId: string) {
         try {
             await this.getConnection()
                 .insert(
@@ -11,7 +11,6 @@ export class RecipeDatabase extends BaseDatabase {
                         id,
                         title,
                         description,
-                        date,
                         user_id: userId 
                     }
                 ).into(RecipeDatabase.tableName);
@@ -21,5 +20,14 @@ export class RecipeDatabase extends BaseDatabase {
         } catch (error) {
             throw new Error(error.sqlMessage || error.message);
         }
+    };
+
+    public async getById(id: string): Promise<any> {
+        const result = await this.getConnection()
+            .select("*")
+            .from(RecipeDatabase.tableName)
+            .where({ id });
+
+        return result[0];
     };
 };

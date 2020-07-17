@@ -6,7 +6,6 @@ import { Authenticator } from './services/Authenticator';
 import { UserDatabase } from './data/UserDatabase';
 import { RecipeDatabase } from './data/RecipeDatabase';
 
-
 dotenv.config();
 
 const app = express();
@@ -120,7 +119,6 @@ app.get("/user/:id", async (req: Request, res: Response) => {
     }
 });
 
-
 //TODO: não está gravando no DB
 app.post("/recipe", async (req: Request, res: Response) => {
     try {
@@ -132,7 +130,6 @@ app.post("/recipe", async (req: Request, res: Response) => {
         const recipeData = {
             title: req.body.title,
             description: req.body.description,
-            date: req.body.date
         };
 
         const userDb = new UserDatabase();
@@ -142,10 +139,25 @@ app.post("/recipe", async (req: Request, res: Response) => {
         const id = idGenerator.generate();
 
         const recipeDb = new RecipeDatabase();
-        await recipeDb.create(id, recipeData.title, recipeData.description, recipeData.date, userId);
+        await recipeDb.create(id, recipeData.title, recipeData.description, userId);
 
         res.status(200).send();
 
+    } catch (error) {
+        res.status(400).send({
+            message: error.message,
+        });
+    }
+});
+
+app.get("/recipe/:id", async (req: Request, res: Response) => {
+    try {
+        const id = req.params.id;
+
+        const recipeDb = new RecipeDatabase();
+        const recipe = await recipeDb.getById(id);
+
+        res.status(200).send(recipe)
     } catch (error) {
         res.status(400).send({
             message: error.message,
