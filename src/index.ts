@@ -6,7 +6,8 @@ import { Authenticator } from './services/Authenticator';
 import { UserDatabase } from './data/UserDatabase';
 import { RecipeDatabase } from './data/RecipeDatabase';
 import { FollowDatabase } from './data/FollowDatabase';
-
+import { HashManager } from './services/HashManager';
+import { title } from 'process';
 
 dotenv.config();
 
@@ -51,11 +52,14 @@ app.post("/signup", async (req: Request, res: Response) => {
             password: req.body.password
         };
 
+        const hashManager = new HashManager();
+        const cipherPassword= await hashManager.hash(userData.password);
+
         const idGenerator =  new IdGenerator();
         const id = idGenerator.generate();
 
         const userDb = new UserDatabase();
-        await userDb.create(id, userData.name, userData.email, userData.password);
+        await userDb.create(id, userData.name, userData.email, cipherPassword);
 
         const authenticator = new Authenticator();
         const token = authenticator.generateToken({
@@ -76,18 +80,24 @@ app.post("/signup", async (req: Request, res: Response) => {
 app.post("/login", async (req: Request, res: Response) => {
     try {
         if (!req.body.email || req.body.email.indexOf("@") === -1) {
-            throw new Error("Invalid email");
+            throw new Error("Invalid credentials");
         };
 
         const userData = {
             email: req.body.email,
-            password: req.body.password,
+            password: req.body.password
         };
 
         const userDatabase = new UserDatabase();
         const user = await userDatabase.getByEmail(userData.email);
 
-        if (user.password !== userData.password) {
+        const hashManager = new HashManager();
+        const passwordIsCorrect = await hashManager.compare(
+            userData.password,
+            user.password
+        );
+
+        if (!passwordIsCorrect) {
             throw new Error("Invalid credentials");
         };
 
@@ -97,7 +107,7 @@ app.post("/login", async (req: Request, res: Response) => {
         });
 
         res.status(200).send({
-            token,
+            token
         });
     } catch (error) {
         res.status(400).send({
@@ -118,32 +128,35 @@ app.get("/user/profile", async (req: Request, res: Response) => {
 
         res.status(200).send({
             id: user.id,
-            email: user.email,
+            name: user.name,
+            email: user.email
         });
-    } catch (err) {
+    } catch (error) {
         res.status(400).send({
-            message: err.message,
+            message: error.message
         });
     }
 });
 
-//TODO: remover id deste endpoint
 app.get("/user/:id", async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
-        console.log(req.params)
+
         const userDb = new UserDatabase();
         const user = await userDb.getById(id);
 
-        res.status(200).send(user)
+        res.status(200).send({
+            id: user.id,
+            name: user.name,
+            email: user.email
+        });
     } catch (error) {
         res.status(400).send({
-            message: error.message,
+            message: error.message
         });
     }
 });
 
-//TODO: não está gravando no DB
 app.post("/recipe", async (req: Request, res: Response) => {
     try {
         const token = req.headers.authorization as string;
@@ -181,10 +194,15 @@ app.get("/recipe/:id", async (req: Request, res: Response) => {
         const recipeDb = new RecipeDatabase();
         const recipe = await recipeDb.getById(id);
 
-        res.status(200).send(recipe)
+        res.status(200).send({
+            id: recipe.id,
+            title: recipe.title,
+            description: recipe.description,
+            created_date: recipe.created_date
+        });
     } catch (error) {
         res.status(400).send({
-            message: error.message,
+            message: error.message
         });
     }
 });
@@ -206,7 +224,9 @@ app.post("/user/follow", async (req: Request, res: Response) => {
         const followDb = new FollowDatabase();
         await followDb.create(followerId.id, followData.followedId);
         
-        res.status(200).send();
+        res.status(200).send({
+            message: "Followed successfully"
+        });
 
     } catch (error) {
         res.status(400).send({
@@ -244,7 +264,6 @@ app.post("/user/unfollow", async (req: Request, res: Response) => {
     }
 
 });
-
 
 const server = app.listen(process.env.PORT || 3003, () => {
     if (server) {
