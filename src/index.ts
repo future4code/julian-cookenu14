@@ -5,6 +5,8 @@ import { IdGenerator } from './services/IdGenerator';
 import { Authenticator } from './services/Authenticator';
 import { UserDatabase } from './data/UserDatabase';
 import { RecipeDatabase } from './data/RecipeDatabase';
+import { FollowDatabase } from './data/FollowDatabase';
+
 
 dotenv.config();
 
@@ -133,13 +135,13 @@ app.post("/recipe", async (req: Request, res: Response) => {
         };
 
         const userDb = new UserDatabase();
-        const userId = await userDb.getById(authenticationData.id);
+        const user = await userDb.getById(authenticationData.id);
 
         const idGenerator =  new IdGenerator();
         const id = idGenerator.generate();
 
         const recipeDb = new RecipeDatabase();
-        await recipeDb.create(id, recipeData.title, recipeData.description, userId);
+        await recipeDb.create(id, recipeData.title, recipeData.description, user.id);
 
         res.status(200).send();
 
@@ -163,6 +165,33 @@ app.get("/recipe/:id", async (req: Request, res: Response) => {
             message: error.message,
         });
     }
+});
+
+app.post("/user/follow", async (req: Request, res: Response) => {
+    try {
+        const token = req.headers.authorization as string;
+
+        const authenticator = new Authenticator();
+        const authenticationData = authenticator.getData(token);
+
+        const userDb = new UserDatabase();
+        const followerId = await userDb.getById(authenticationData.id);
+
+        const followData = {
+            followedId: req.body.followedId
+        };
+
+        const followDb = new FollowDatabase();
+        await followDb.create(followerId.id, followData.followedId);
+        
+        res.status(200).send();
+
+    } catch (error) {
+        res.status(400).send({
+            message: error.message,
+        });
+    }
+
 });
 
 
