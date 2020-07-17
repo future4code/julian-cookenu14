@@ -19,4 +19,21 @@ export class FollowDatabase extends BaseDatabase {
             throw new Error(error.sqlMessage || error.message);
         }
     };
+
+    public async delete(followerId: string, followedId: string) {
+        try {
+            await this.getConnection()
+                .where({
+                    follower_id: followerId,
+                    followed_id: followedId
+                })
+                .del()
+                .into(FollowDatabase.tableName);
+
+            BaseDatabase.destroyConnection();
+
+        } catch (error) {
+            throw new Error(error.sqlMessage || error.message);
+        }
+    }
 };
