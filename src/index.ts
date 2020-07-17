@@ -14,6 +14,28 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/user/feed", async (req: Request, res: Response) => {
+    try {
+        const token = req.headers.authorization as string;
+
+        const authenticator = new Authenticator();
+        const authenticationData = authenticator.getData(token);
+
+        const userDb = new UserDatabase();
+        const user = await userDb.getById(authenticationData.id);
+
+        const recipeDb = new RecipeDatabase();
+        const recipes = await recipeDb.getAllByUserId(user.id);
+
+        res.status(200).send({recipes});
+
+    } catch (error) {
+        res.status(400).send({
+            message: error.message,
+        });
+    }
+});
+
 app.post("/signup", async (req: Request, res: Response) => {
     try {
         if(!req.body.email || req.body.email.indexOf('@') === -1) {
@@ -109,7 +131,7 @@ app.get("/user/profile", async (req: Request, res: Response) => {
 app.get("/user/:id", async (req: Request, res: Response) => {
     try {
         const id = req.params.id;
-
+        console.log(req.params)
         const userDb = new UserDatabase();
         const user = await userDb.getById(id);
 
